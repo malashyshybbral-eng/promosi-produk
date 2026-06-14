@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Core - PromoForge</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="h-screen flex items-center justify-center p-6 bg-[#0b0f19]">
+  <div class="glass-card w-full max-w-md p-8 rounded-2xl border border-gray-800 shadow-2xl relative">
+    <div class="absolute -top-10 left-1/2 transform -translate-x-1/2 w-20 h-20 rounded-full bg-cyan-500/10 blur-xl"></div>
+    
+    <div class="text-center mb-8">
+      <h1 class="text-xl font-black tracking-tight text-white">OTENTIKASI PANEL ADMIN</h1>
+      <p class="text-xs text-gray-400 mt-1">Gunakan kredensial sistem yang terdaftar di Sheets</p>
+    </div>
+
+    <form id="login-form" class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Username</label>
+        <input type="text" id="username" required class="w-full glass-card border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 bg-transparent">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Password</label>
+        <input type="password" id="password" required class="w-full glass-card border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 bg-transparent">
+      </div>
+      
+      <div class="flex flex-col gap-3 mt-6">
+        <button type="submit" id="btn-submit" class="w-full bg-gradient-to-r from-cyan-500 to-purple-600 font-bold text-sm text-gray-950 py-2.5 rounded-lg shadow-lg hover:glow-cyan transition">
+          Masuk Sistem ⚡
+        </button>
+        
+        <a href="index.html" class="w-full text-center glass-card border border-gray-800 hover:bg-gray-800/50 text-gray-400 hover:text-white font-medium text-sm py-2.5 rounded-lg transition duration-200">
+          ← Kembali ke Beranda
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <script src="js/shared.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("btn-submit");
+      btn.innerText = "Memverifikasi...";
+      btn.disabled = true;
+
+      const userVal = document.getElementById("username").value;
+      const passVal = document.getElementById("password").value;
+
+      const adminData = await API.get("getAdmin");
+      
+      if(adminData && Auth.login(userVal, passVal, adminData)) {
+        showToast("Login Berhasil! Mengalihkan...");
+        setTimeout(() => window.location.href = "admin/dashboard.html", 1000);
+      } else {
+        showToast("Username atau Password keliru!", "error");
+        btn.innerText = "Masuk Sistem ⚡";
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

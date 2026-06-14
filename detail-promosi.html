@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detail Promosi - PromoForge</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="max-w-4xl mx-auto px-6 py-16">
+    <a href="promosi.html" class="text-xs font-semibold text-cyan-400 hover:underline mb-6 inline-block">← Kembali ke Hub Promosi</a>
+    
+    <div id="detail-card" class="glass-card rounded-2xl overflow-hidden border border-gray-800 p-6 md:p-8">
+      <div class="animate-pulse space-y-4">
+        <div class="skeleton h-64 w-full rounded-xl"></div>
+        <div class="skeleton h-8 w-2/3 rounded"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/shared.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    async function loadDetail() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const promoId = urlParams.get('id');
+      const root = document.getElementById("detail-card");
+
+      if(!promoId) {
+        root.innerHTML = `<p class="text-center text-red-400">ID Promosi Tidak Valid</p>`;
+        return;
+      }
+
+      const [promosi, produk] = await Promise.all([API.get("getPromosi"), API.get("getProduk")]);
+      const promo = promosi.find(p => p.id_promosi === promoId);
+      
+      if(!promo) {
+        root.innerHTML = `<p class="text-center text-red-400">Promosi tidak ditemukan atau telah kadaluarsa.</p>`;
+        return;
+      }
+
+      const prod = produk.find(x => x.id_produk === promo.id_produk) || {};
+      const hargaDiskon = Number(prod.harga) - (Number(prod.harga) * (Number(promo.diskon) / 100));
+
+      root.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div class="rounded-xl overflow-hidden bg-gray-900 border border-gray-800 h-64 md:h-auto">
+            <img src="${prod.gambar}" class="w-full h-full object-cover">
+          </div>
+          <div class="flex flex-col justify-between">
+            <div>
+              <span class="bg-purple-500/10 text-purple-400 text-xs font-bold px-2.5 py-1 rounded border border-purple-500/20">KAMPANYE AKBAR</span>
+              <h1 class="text-2xl font-extrabold text-white mt-3">${promo.judul_promosi}</h1>
+              <p class="text-xs text-gray-400 mt-2 leading-relaxed">${promo.deskripsi}</p>
+              
+              <div class="mt-6 p-4 rounded-xl bg-gray-900/60 border border-gray-800">
+                <p class="text-xs text-gray-400 font-medium">Produk Terkait: <span class="text-gray-200 font-bold">${prod.nama_produk}</span></p>
+                <div class="flex items-baseline gap-2 mt-2">
+                  <span class="text-sm line-through text-gray-500">Rp ${Number(prod.harga).toLocaleString('id-ID')}</span>
+                  <span class="text-lg font-black text-cyan-400">Rp ${hargaDiskon.toLocaleString('id-ID')}</span>
+                  <span class="text-xs bg-red-500 text-white font-bold px-1.5 py-0.5 rounded">-${promo.diskon}% OFF</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-8 pt-4 border-t border-gray-800/80 flex justify-between items-center">
+              <div>
+                <p class="text-[10px] text-gray-500 uppercase tracking-wider">Countdown Event:</p>
+                <div id="countdown-detail" class="text-lg font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400">Perhitungan...</div>
+              </div>
+              <div class="text-right">
+                <p class="text-[10px] text-gray-500">Hingga Tanggal</p>
+                <p class="text-xs font-bold text-gray-300">${promo.tanggal_selesai}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      initCountdown(promo.tanggal_selesai, "countdown-detail");
+    }
+    loadDetail();
+  </script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Promosi Aktif - PromoForge</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="glass-card sticky top-0 z-40 border-b border-gray-800 px-6 py-4 flex justify-between items-center">
+    <div class="font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">⚡ PROMOFORGE</div>
+    <div class="flex gap-6 text-sm font-medium text-gray-300">
+      <a href="index.html" class="hover:text-cyan-400">Home</a>
+      <a href="produk.html" class="hover:text-cyan-400">Produk</a>
+      <a href="promosi.html" class="text-cyan-400">Promosi</a>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-6 py-12">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+      <div>
+        <h1 class="text-2xl font-bold text-white">Hub Kampanye Promosi</h1>
+        <p class="text-xs text-gray-400">Hanya menampilkan promosi ter-validasi yang aktif hari ini.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <label class="text-xs text-gray-400 font-medium">Filter:</label>
+        <select id="promo-filter" class="glass-card px-3 py-1.5 rounded-lg text-xs bg-gray-900 border border-gray-700 text-gray-200 focus:outline-none">
+          <option value="all">Semua Promo</option>
+          <option value="active" selected>Sedang Berjalan</option>
+        </select>
+      </div>
+    </div>
+    <div id="promo-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4"></div>
+  </main>
+
+  <script src="js/shared.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    let allPromos = [];
+    let allProds = [];
+
+    async function loadPromosi() {
+      const grid = document.getElementById("promo-grid");
+      grid.innerHTML = createCardSkeleton().repeat(3);
+      
+      const [promosi, produk] = await Promise.all([API.get("getPromosi"), API.get("getProduk")]);
+      allPromos = promosi || [];
+      allProds = produk || [];
+      
+      applyFilter();
+    }
+
+    function applyFilter() {
+      const filterVal = document.getElementById("promo-filter").value;
+      const today = new Date().toISOString().split('T')[0];
+      
+      let filtered = allPromos;
+      if (filterVal === "active") {
+        filtered = allPromos.filter(p => p.tanggal_mulai <= today && p.tanggal_selesai >= today);
+      }
+      
+      renderPromos(filtered);
+    }
+
+    function renderPromos(promos) {
+      const grid = document.getElementById("promo-grid");
+      grid.innerHTML = "";
+      
+      if(promos.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500">Tidak ada promosi yang memenuhi kriteria filter.</div>`;
+        return;
+      }
+
+      promos.forEach(p => {
+        const prod = allProds.find(x => x.id_produk === p.id_produk) || {};
+        const card = document.createElement("div");
+        // Menambahkan flex flex-col justify-between agar tinggi card seragam
+        card.className = "glass-card rounded-xl overflow-hidden flex flex-col justify-between border border-gray-800";
+        card.innerHTML = `
+          <div>
+            <div class="relative aspect-square bg-gray-900 overflow-hidden">
+              <img src="${prod.gambar}" class="w-full h-full object-cover" loading="lazy">
+              <div class="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-transparent to-transparent"></div>
+              <span class="absolute bottom-3 left-3 bg-cyan-500/20 text-cyan-400 text-[10px] font-bold border border-cyan-500/30 px-2 py-0.5 rounded">${p.id_promosi}</span>
+            </div>
+            <div class="p-4">
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="font-bold text-sm text-white line-clamp-1">${p.judul_promosi}</h3>
+                <span class="text-xs bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded font-black shrink-0">-${p.diskon}%</span>
+              </div>
+              <p class="text-xs text-gray-400 mt-2 line-clamp-2">${p.deskripsi}</p>
+            </div>
+          </div>
+          <div class="p-4 border-t border-gray-800/80 bg-gray-900/30 flex justify-between items-center mt-auto">
+            <div>
+              <p class="text-[10px] text-gray-500">Masa Berlaku:</p>
+              <p class="text-xs font-semibold text-gray-300">${p.tanggal_selesai}</p>
+            </div>
+            <a href="detail-promosi.html?id=${p.id_promosi}" class="bg-cyan-500 hover:bg-cyan-600 text-gray-950 font-bold text-xs px-2.5 py-1.5 rounded-lg transition shadow-md whitespace-nowrap">Detail Promo</a>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    document.getElementById("promo-filter").addEventListener("change", applyFilter);
+    loadPromosi();
+  </script>
+</body>
+</html>

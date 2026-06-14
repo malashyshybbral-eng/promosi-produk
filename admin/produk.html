@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRUD Produk - Panel Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="flex min-h-screen">
+  <aside class="w-64 glass-card border-r border-gray-800 p-6 flex flex-col justify-between hidden md:flex">
+    <div class="space-y-8">
+      <div class="font-black text-lg text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">⚡ ADMIN SYSTEM</div>
+      <nav class="flex flex-col gap-2 text-sm">
+        <a href="dashboard.html" class="text-gray-400 hover:bg-gray-800 px-4 py-2.5 rounded-lg transition">Dashboard Summary</a>
+        <a href="produk.html" class="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-4 py-2.5 rounded-lg font-bold">Kelola Produk (CRUD)</a>
+        <a href="promosi.html" class="text-gray-400 hover:bg-gray-800 px-4 py-2.5 rounded-lg transition">Kelola Promosi (CRUD)</a>
+        <a href="laporan.html" class="text-gray-400 hover:bg-gray-800 px-4 py-2.5 rounded-lg transition">Laporan Grafik</a>
+      </nav>
+    </div>
+    <button class="w-full text-left text-xs text-red-400 font-bold border border-red-500/20 hover:bg-red-500/10 p-2 rounded-lg transition"><a href="../index.html">✕ Log Out Sistem</a></button>
+  </aside>
+
+  <main class="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div>
+        <h1 class="text-2xl font-black text-white">Data Manajemen Master Produk</h1>
+        <p class="text-xs text-gray-400">Gunakan form di bawah ini untuk mutasi data secara sinkron</p>
+      </div>
+      <button onclick="toggleModal(true)" class="bg-cyan-500 text-gray-950 font-bold text-xs px-4 py-2.5 rounded-lg shadow hover:glow-cyan transition">➕ Tambah Produk Baru</button>
+    </div>
+
+    <div class="glass-card rounded-xl border border-gray-800 overflow-x-auto">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr class="border-b border-gray-800 text-gray-400 font-bold bg-gray-900/40">
+            <th class="p-4">ID PRODUK</th>
+            <th class="p-4">NAMA</th>
+            <th class="p-4">DESKRIPSI</th>
+            <th class="p-4">HARGA</th>
+            <th class="p-4 text-center">AKSI</th>
+          </tr>
+        </thead>
+        <tbody id="crud-table-body" class="text-gray-300 divide-y divide-gray-800/50">
+          <tr><td colspan="5" class="p-4 text-center text-gray-500">Sedang memetakan records dari cloud...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="form-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-sm hidden">
+      <div class="glass-card w-full max-w-lg p-6 rounded-xl border border-gray-800 relative">
+        <h2 id="modal-title" class="text-lg font-black text-white mb-4">Entri Produk Baru</h2>
+        <form id="crud-form" class="space-y-4 text-xs">
+          <input type="hidden" id="action-type" value="addProduk">
+          <input type="hidden" id="target-id">
+          <div>
+            <label class="block text-gray-400 font-medium mb-1">ID Produk * (Contoh: PRD002)</label>
+            <input type="text" id="id_produk" required class="w-full glass-card border border-gray-700 rounded px-3 py-2 text-white focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-gray-400 font-medium mb-1">Nama Produk *</label>
+            <input type="text" id="nama_produk" required class="w-full glass-card border border-gray-700 rounded px-3 py-2 text-white focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-gray-400 font-medium mb-1">Deskripsi Ringkas</label>
+            <textarea id="deskripsi" class="w-full glass-card border border-gray-700 rounded px-3 py-2 text-white focus:outline-none h-20"></textarea>
+          </div>
+          <div>
+            <label class="block text-gray-400 font-medium mb-1">Harga Berjalan (Rupiah) *</label>
+            <input type="number" id="harga" required class="w-full glass-card border border-gray-700 rounded px-3 py-2 text-white focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-gray-400 font-medium mb-1">Image URL Link / Base64 Data Link</label>
+            <input type="text" id="gambar" class="w-full glass-card border border-gray-700 rounded px-3 py-2 text-white focus:outline-none" placeholder="https://...">
+          </div>
+          <div class="flex justify-end gap-2 pt-4 border-t border-gray-800 mt-6">
+            <button type="button" onclick="toggleModal(false)" class="px-4 py-2 bg-gray-800 text-gray-400 rounded hover:bg-gray-700">Batalkan</button>
+            <button type="submit" class="px-4 py-2 bg-cyan-500 text-gray-950 font-bold rounded">Eksekusi Data</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script src="../js/auth.js"></script>
+  <script src="../js/shared.js"></script>
+  <script src="../js/api.js"></script>
+  <script>
+    Auth.checkAuth();
+    let localData = [];
+
+    async function syncTable() {
+      const tbody = document.getElementById("crud-table-body");
+      localData = await API.get("getProduk") || [];
+      tbody.innerHTML = "";
+      
+      if(localData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">Kosong.</td></tr>`;
+        return;
+      }
+
+      localData.forEach(p => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-gray-900/20 transition";
+        tr.innerHTML = `
+          <td class="p-4 font-mono font-bold text-cyan-400">${p.id_produk}</td>
+          <td class="p-4 font-bold text-white">${p.nama_produk}</td>
+          <td class="p-4 max-w-xs truncate">${p.deskripsi || '-'}</td>
+          <td class="p-4 text-emerald-400 font-medium">Rp ${Number(p.harga).toLocaleString('id-ID')}</td>
+          <td class="p-4 text-center flex justify-center gap-2">
+            <button onclick="editTrigger('${p.id_produk}')" class="text-amber-400 hover:underline">Edit</button>
+            <button onclick="deleteTrigger('${p.id_produk}')" class="text-red-400 hover:underline">Hapus</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function toggleModal(show) {
+      const modal = document.getElementById("form-modal");
+      if(show) {
+        modal.classList.remove("hidden");
+      } else {
+        modal.classList.add("hidden");
+        document.getElementById("crud-form").reset();
+        document.getElementById("action-type").value = "addProduk";
+        document.getElementById("id_produk").disabled = false;
+      }
+    }
+
+    function editTrigger(id) {
+      const target = localData.find(x => x.id_produk === id);
+      if(!target) return;
+      
+      document.getElementById("action-type").value = "updateProduk";
+      document.getElementById("target-id").value = target.id_produk;
+      document.getElementById("id_produk").value = target.id_produk;
+      document.getElementById("id_produk").disabled = true; // PK Lock
+      document.getElementById("nama_produk").value = target.nama_produk;
+      document.getElementById("deskripsi").value = target.deskripsi;
+      document.getElementById("harga").value = target.harga;
+      document.getElementById("gambar").value = target.gambar;
+
+      document.getElementById("modal-title").innerText = "Modifikasi Eksisting Produk";
+      toggleModal(true);
+    }
+
+    async function deleteTrigger(id) {
+      if(confirm(`Yakin mendelete entitas produk ${id}? Tindakan ini permanen di Google Sheets.`)) {
+         await API.post("deleteProduk", {}, id);
+         showToast("Instruksi hapus dikirim ke Cloud Sheets");
+         setTimeout(() => syncTable(), 1500);
+      }
+    }
+
+    document.getElementById("crud-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const action = document.getElementById("action-type").value;
+      const id = document.getElementById("target-id").value;
+      const session = JSON.parse(localStorage.getItem("admin_session"));
+
+      const dataObj = {
+        id_produk: document.getElementById("id_produk").value,
+        nama_produk: document.getElementById("nama_produk").value,
+        deskripsi: document.getElementById("deskripsi").value,
+        harga: document.getElementById("harga").value,
+        gambar: document.getElementById("gambar").value || "https://images.unsplash.com/photo-1531403009284-440f080d1e12",
+        id_admin: session.id
+      };
+
+      await API.post(action, dataObj, action === "updateProduk" ? id : null);
+      showToast("Data diproses ke pipeline cloud");
+      toggleModal(false);
+      setTimeout(() => syncTable(), 1500);
+    });
+
+    syncTable();
+  </script>
+</body>
+</html>

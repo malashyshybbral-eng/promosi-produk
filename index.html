@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PromoForge - Sistem Promosi Masa Depan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="overflow-x-hidden">
+  <nav class="glass-card sticky top-0 z-40 border-b border-gray-800 px-6 py-4 flex justify-between items-center">
+    <div class="flex items-center gap-2 font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
+      ⚡ PROMOFORGE
+    </div>
+    <div class="hidden md:flex gap-6 text-sm font-medium text-gray-300">
+      <a href="index.html" class="text-cyan-400">Home</a>
+      <a href="produk.html" class="hover:text-cyan-400 transition">Produk</a>
+      <a href="promosi.html" class="hover:text-cyan-400 transition">Promosi</a>
+    </div>
+    <a href="login.html" class="glass-card text-xs font-semibold px-4 py-2 rounded-lg border border-cyan-500/30 text-cyan-400 hover:glow-cyan transition">
+      Admin Panel
+    </a>
+  </nav>
+
+  <header class="relative py-24 px-6 max-w-7xl mx-auto flex flex-col items-center text-center">
+    <div class="absolute inset-0 bg-gradient-to-tr from-purple-500/10 via-transparent to-cyan-500/10 blur-3xl pointer-events-none"></div>
+    <span class="text-xs font-bold tracking-widest text-purple-400 uppercase bg-purple-500/10 px-4 py-1.5 rounded-full border border-purple-500/20 mb-6">Introducing Ecosystem</span>
+    <h1 class="text-4xl md:text-6xl font-extrabold max-w-3xl leading-tight tracking-tight">
+      Sistem Manajemen Promosi <br>
+      <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-400 to-purple-500">Interaktif & Data-Driven</span>
+    </h1>
+    <p class="mt-6 text-gray-400 max-w-xl text-sm md:text-base">Dapatkan update diskon produk premium terbaik secara real-time dari platform serverless pintar kami.</p>
+    <div class="mt-10 flex flex-wrap gap-4 justify-center">
+      <a href="promosi.html" class="bg-gradient-to-r from-cyan-500 to-blue-600 font-medium px-6 py-3 rounded-lg shadow-lg hover:glow-cyan transition">Lihat Promo Aktif</a>
+      <a href="produk.html" class="glass-card font-medium px-6 py-3 rounded-lg border border-gray-700 hover:bg-gray-800 transition">Katalog Produk</a>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 pb-20">
+    <h2 class="text-xl font-bold text-gray-200 mb-6 flex items-center gap-2">🔥 Promo Flash Terkini</h2>
+    <div id="highlight-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4"></div>
+  </main>
+
+  <script src="js/shared.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    async function initLanding() {
+      const grid = document.getElementById("highlight-grid");
+      grid.innerHTML = createCardSkeleton().repeat(3);
+      
+      const [promosi, produk] = await Promise.all([API.get("getPromosi"), API.get("getProduk")]);
+      grid.innerHTML = "";
+      
+      // Ambil 3 promo teratas yang aktif saat ini
+      const activePromos = (promosi || []).slice(0, 3);
+      
+      if(activePromos.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500">Belum ada promosi aktif masa kini.</div>`;
+        return;
+      }
+
+      activePromos.forEach(p => {
+        const prod = produk.find(x => x.id_produk === p.id_produk) || {};
+        const card = document.createElement("div");
+        card.className = "glass-card rounded-xl overflow-hidden group hover:border-cyan-500/40 transition duration-300 flex flex-col justify-between";
+        card.innerHTML = `
+          <div>
+            <div class="relative aspect-square overflow-hidden bg-gray-900">
+              <img src="${prod.gambar || 'https://images.unsplash.com/photo-1531403009284-440f080d1e12'}" 
+                  loading="lazy" 
+                  class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+              <span class="absolute top-3 right-3 bg-red-500 text-white text-xs font-black px-2.5 py-1 rounded-md shadow-md">-${p.diskon}%</span>
+            </div>
+            <div class="p-5">
+              <h3 class="font-bold text-lg text-white group-hover:text-cyan-400 transition">${p.judul_promosi}</h3>
+              <p class="text-xs text-gray-400 mt-2 line-clamp-2">${p.deskripsi}</p>
+            </div>
+          </div>
+          <div class="px-5 pb-5 pt-2 border-t border-gray-800/60 flex items-center justify-between">
+            <div>
+              <p class="text-xs text-gray-500">Sisa waktu:</p>
+              <div id="cd-${p.id_promosi}" class="text-xs font-bold text-purple-400">Loading...</div>
+            </div>
+            <a href="detail-promosi.html?id=${p.id_promosi}" class="text-xs font-semibold text-cyan-400 hover:underline">Detail ↗</a>
+          </div>
+        `;
+        grid.appendChild(card);
+        initCountdown(p.tanggal_selesai, `cd-${p.id_promosi}`);
+      });
+    }
+    initLanding();
+  </script>
+</body>
+</html>

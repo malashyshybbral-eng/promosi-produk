@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laporan Distribusi - Panel Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="flex min-h-screen bg-[#0b0f19]">
+
+  <aside class="w-64 glass-card border-r border-gray-800 p-6 flex flex-col justify-between hidden md:flex">
+    <div class="space-y-8">
+      <div class="font-black text-lg text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">⚡ ADMIN SYSTEM</div>
+      <nav class="flex flex-col gap-2 text-sm">
+        <a href="dashboard.html" class="text-gray-400 hover:bg-gray-800 px-4 py-2.5 rounded-lg transition">Dashboard Summary</a>
+        <a href="produk.html" class="text-gray-400 hover:bg-gray-800 px-4 py-2.5 rounded-lg transition">Kelola Produk (CRUD)</a>
+        <a href="promosi.html" class="text-gray-400 hover:bg-gray-800 px-4 py-2.5 rounded-lg transition">Kelola Promosi (CRUD)</a>
+        <a href="laporan.html" class="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-4 py-2.5 rounded-lg font-bold">Laporan Grafik</a>
+      </nav>
+    </div>
+    <button class="w-full text-left text-xs text-red-400 font-bold border border-red-500/20 hover:bg-red-500/10 p-2 rounded-lg transition"><a href="../index.html">✕ Log Out Sistem</a></button>
+  </aside>
+
+  <main class="flex-1 p-6 md:p-10 max-w-4xl mx-auto w-full">
+    <h1 class="text-2xl font-black text-white">Dashboard Analitis Promosi</h1>
+    <p class="text-xs text-gray-400 mt-1">Grafik komparasi besaran persentase diskon per skema promosi aktif.</p>
+
+    <div class="glass-card p-6 rounded-xl border border-gray-800 mt-8 relative min-h-[350px] flex items-center justify-center">
+      <div id="loading-status" class="absolute text-sm text-gray-500 animate-pulse">Menghubungkan ke database cloud...</div>
+      
+      <div class="w-full h-80">
+        <canvas id="promoChart"></canvas>
+      </div>
+    </div>
+  </main>
+
+  <script src="../js/auth.js"></script>
+  <script src="../js/shared.js"></script>
+  <script src="../js/api.js"></script>
+  <script>
+    // Pastikan admin sudah login
+    Auth.checkAuth();
+
+    async function generateReport() {
+      const statusEl = document.getElementById("loading-status");
+      
+      try {
+        // Ambil data promosi dari Google Sheets via API
+        const promosi = await API.get("getPromosi") || [];
+        
+        // Cek jika data kosong
+        if (promosi.length === 0) {
+          statusEl.innerText = "Tidak ada data promosi yang tersedia untuk dibuat grafik.";
+          statusEl.classList.remove("animate-pulse");
+          return;
+        }
+
+        // Sembunyikan status loading jika data berhasil dimuat
+        statusEl.classList.add("hidden");
+
+        // Ekstrak data untuk kebutuhan Chart.js
+        const labels = promosi.map(p => p.judul_promosi);
+        const values = promosi.map(p => Number(p.diskon));
+
+        // Inisialisasi Canvas Context yang Benar ('2d')
+        const ctx = document.getElementById('promoChart').getContext('2d');
+        
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Besar Diskon (%)',
+              data: values,
+              backgroundColor: 'rgba(6, 182, 212, 0.3)', // Cyan transparan
+              borderColor: 'rgba(6, 182, 212, 1)',     // Cyan solid
+              borderWidth: 2,
+              borderRadius: 6,
+              hoverBackgroundColor: 'rgba(168, 85, 247, 0.5)', // Berubah jadi Ungu saat di-hover
+              hoverBorderColor: 'rgba(168, 85, 247, 1)'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { 
+                labels: { 
+                  color: '#9ca3af', 
+                  font: { family: 'Inter', size: 12 } 
+                } 
+              }
+            },
+            scales: {
+              x: { 
+                grid: { color: 'rgba(255, 255, 255, 0.05)' }, 
+                ticks: { color: '#9ca3af', font: { family: 'Inter' } } 
+              },
+              y: { 
+                grid: { color: 'rgba(255, 255, 255, 0.05)' }, 
+                ticks: { color: '#9ca3af', font: { family: 'Inter' } }, 
+                beginAtZero: true, 
+                max: 100 
+              }
+            }
+          }
+        });
+
+      } catch (error) {
+        console.error("Gagal memuat grafik:", error);
+        statusEl.innerText = "Gagal memuat data grafik dari Google Sheets.";
+        statusEl.classList.remove("animate-pulse");
+        statusEl.classList.add("text-red-400");
+      }
+    }
+
+    // Jalankan fungsi pembuatan laporan saat halaman siap
+    generateReport();
+  </script>
+</body>
+</html>
