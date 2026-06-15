@@ -1,5 +1,5 @@
 // GANTI DENGAN URL DEPLOYMENT WEB APP APPS SCRIPT ANDA
-const API_URL = "https://script.google.com/macros/s/AKfycbyGBGm3vjdv6VCM4XEeianKCKz9AHz9nkeYgrCNDfYRn1FHGIDP6WILGeMM549YYdK-/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbz1gKzIC3KxrZINw0erD2H_KMVpRedTAvaqWPcEgWCT0_518U1tBG0xtVB4pcnnEgxU6w/exec";
 
 const API = {
   async get(action) {
